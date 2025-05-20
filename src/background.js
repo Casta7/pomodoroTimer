@@ -7,8 +7,6 @@ let ultimaFS = 0;
 let ultimaBR = 0;
 
 function avvia(fs, br, fase) {
-    chrome.alarms.create('timerPomodoro', { delayInMinutes: fase === 'focus' ? fs / 60000 : br / 60000 });
-
     durata_rimanente = fase === 'focus' ? fs : br;
     inizio = Date.now();
     attivo = true;
@@ -17,48 +15,62 @@ function avvia(fs, br, fase) {
     ultimaFS = fs;
     ultimaBR = br;
 
+    chrome.alarms.create('timerPomodoro', { delayInMinutes: durata_rimanente / 60000 });
+
     chrome.storage.local.set({
-        inizio: inizio,
+        inizio,
         durata: durata_rimanente,
-        attivo: attivo,
+        attivo,
         fase: fase_corrente,
-        ultimaFS: ultimaFS,
-        ultimaBR: ultimaBR
+        ultimaFS,
+        ultimaBR
     });
 }
 
 function stop() {
     chrome.alarms.clear('timerPomodoro');
 
-    attivo = false;
-    const elapsed = Date.now() - inizio;
-    durata_rimanente = durata_rimanente - elapsed;
-    inizio = 0;
+    // Prendi i dati aggiornati e calcola durata rimanente
+    chrome.storage.local.get(['inizio', 'durata'], (data) => {
+        let elapsed = 0;
+        if (data.inizio && data.durata) {
+            elapsed = Date.now() - data.inizio;
+        }
+        durata_rimanente = (data.durata || 0) - elapsed;
+        if (durata_rimanente < 0) durata_rimanente = 0;
 
-    chrome.storage.local.set({
-        inizio: 0,
-        durata: durata_rimanente,
-        attivo: false,
-        fase: fase_corrente,
-        ultimaFS: ultimaFS,
-        ultimaBR: ultimaBR
+        attivo = false;
+        inizio = 0;
+
+        chrome.storage.local.set({
+            inizio: 0,
+            durata: durata_rimanente,
+            attivo: false,
+            fase: fase_corrente,
+            ultimaFS,
+            ultimaBR
+        });
     });
 }
 
 function resume() {
-    if (!durata_rimanente || durata_rimanente <= 0) return;
+    chrome.storage.local.get(['durata'], (data) => {
+        if (!data.durata || data.durata <= 0) return;
 
-    chrome.alarms.create('timerPomodoro', { delayInMinutes: durata_rimanente / 60000 });
-    inizio = Date.now();
-    attivo = true;
+        durata_rimanente = data.durata;
+        inizio = Date.now();
+        attivo = true;
 
-    chrome.storage.local.set({
-        inizio: inizio,
-        durata: durata_rimanente,
-        attivo: true,
-        fase: fase_corrente,
-        ultimaFS: ultimaFS,
-        ultimaBR: ultimaBR
+        chrome.alarms.create('timerPomodoro', { delayInMinutes: durata_rimanente / 60000 });
+
+        chrome.storage.local.set({
+            inizio,
+            durata: durata_rimanente,
+            attivo: true,
+            fase: fase_corrente,
+            ultimaFS,
+            ultimaBR
+        });
     });
 }
 
@@ -108,13 +120,15 @@ chrome.runtime.onMessage.addListener((messaggio, sender, sendResponse) => {
             break;
 
         case 'STATO':
-            sendResponse({
-                inizio: inizio,
-                durata: durata_rimanente,
-                attivo: attivo,
-                fase: fase_corrente,
+            chrome.storage.local.get(['inizio', 'durata', 'attivo', 'fase'], (data) => {
+                sendResponse({
+                    inizio: data.inizio || 0,
+                    durata: data.durata || 0,
+                    attivo: data.attivo || false,
+                    fase: data.fase || null
+                });
             });
-            break;
+            return true; // risposte async
 
         case 'RESET':
             del();
