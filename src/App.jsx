@@ -29,12 +29,13 @@ const App = () => {
             clearInterval(intervalId);
             setLeft(0);
             setIsRunning(false);
+            window.location.reload();
           } else {
             setLeft(remaining);
           }
         };
   
-        updateTime();
+        updateTime(); 
         intervalId = setInterval(updateTime, 1000);
       } else if (!res.attivo && res.durata > 0) {
         // Pausa: mostra il tempo rimanente congelato
@@ -43,7 +44,7 @@ const App = () => {
         setLeft(null); // reset o niente
       }
     });
-  
+      
     return () => clearInterval(intervalId);
   }, []);
   
