@@ -22,7 +22,7 @@ const TimerOptions = ({onAvvioSuccess}) => {
 
   return (
     <div>
-      <button onClick={() => handleSelect(1500, 300)}>25/5 min</button>
+      <button onClick={() => handleSelect(30, 300)}>25/5 min</button>
       <button onClick={() => handleSelect(3000, 600)}>50/10 min</button>
     </div>
   );

@@ -20,6 +20,13 @@ const Controls = ({ isRunning, setIsRunning, onAvvioSuccess }) => {
     });
   };
 
+  const handleReset = () => {
+    chrome.runtime.sendMessage({ tipo: 'RESET' }, () => {
+      setIsRunning(false);
+      onAvvioSuccess();
+    });
+  }
+
   return (
     <div style={{ marginTop: 20 }}>
       {isRunning ? (
@@ -27,6 +34,8 @@ const Controls = ({ isRunning, setIsRunning, onAvvioSuccess }) => {
       ) : (
         <button onClick={handleStart}>Riprendi</button>
       )}
+
+      <button onClick={handleReset}>elimina</button>
     </div>
   );
 };

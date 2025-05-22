@@ -141,13 +141,12 @@ chrome.runtime.onMessage.addListener((messaggio, sender, sendResponse) => {
 chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === 'timerPomodoro') {
         if (fase_corrente === 'focus') {
-            if (ultimaFS > 0 && ultimaBR > 0) {
-                fase_corrente = 'pausa';
-                avvia(ultimaFS, ultimaBR, 'pausa');
-                inviaNotifica('Pausa iniziata!');
-            } else {
-                del();
-            }
+           
+            fase_corrente = 'pausa';
+            avvia(ultimaFS, ultimaBR, 'pausa');
+            inviaNotifica('Pausa iniziata!');
+      
+            
         } else {
             del();
             inviaNotifica('Pomodoro completato!');
