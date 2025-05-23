@@ -23,8 +23,9 @@ function avvia(fs, br, fase) {
 
 //it clears the timer and calc how many [ms] left 
 function stop() {
-    chrome.alarms.clear('timerPomodoro');
+    chrome.alarms.clear('timerPomodoro'); //del
 
+    //sev new left time
     chrome.storage.local.get(['inizio', 'durata', 'fase', 'ultimaFS', 'ultimaBR'], (data) => {
         if (!data.inizio || !data.durata) return;
 
@@ -51,8 +52,10 @@ function resume() {
 
         const inizio = Date.now();
 
+        //start new timer
         chrome.alarms.create('timerPomodoro', { delayInMinutes: data.durata / 60000 }); //convertion in minute
 
+        //save new date and active status
         chrome.storage.local.set({
             inizio,
             durata: data.durata,

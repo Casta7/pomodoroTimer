@@ -1,64 +1,75 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import TimerDisplay from "./components/TimerDisplay";
 import TimerOptions from "./components/TimerOptions";
 import Controls from "./components/Controls";
 
 const App = () => {
-  const [left, setLeft] = useState(0); 
+  const [left, setLeft] = useState(0);
   const [fase, setFase] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [intervalId, setIntervalId] = useState(null);
 
-  //controllo finche il popup è aperto
-  useEffect(() => {
-    let intervalId;
-  
+  // Funzione per aggiornare lo stato leggendo dallo storage
+  const aggiornaStato = useCallback(() => {
     chrome.runtime.sendMessage({ tipo: 'STATO' }, (res) => {
-      console.log("Stato ricevuto:", res);
-  
       setIsRunning(res.attivo);
       setFase(res.fase);
-  
+
+      if (intervalId) clearInterval(intervalId);
+
       if (res.attivo && res.inizio && res.durata) {
         const FINE = res.inizio + res.durata;
-  
+
         const updateTime = () => {
           const now = Date.now();
           const remaining = FINE - now;
-  
+
           if (remaining <= 0) {
-            clearInterval(intervalId);
+            clearInterval(id);
             setLeft(0);
             setIsRunning(false);
-            window.location.reload();
+            aggiornaStato(); // Risincronizza dopo la fine del timer
           } else {
             setLeft(remaining);
           }
         };
-  
-        updateTime(); 
-        intervalId = setInterval(updateTime, 1000);
+
+        updateTime();
+        const id = setInterval(updateTime, 1000);
+        setIntervalId(id);
       } else if (!res.attivo && res.durata > 0) {
-        // Pausa: mostra il tempo rimanente congelato
         setLeft(res.durata);
       } else {
         setLeft(null); // reset o niente
       }
     });
-      
-    return () => clearInterval(intervalId);
-  }, []);
-  
+  }, [intervalId]);
 
-
+  // All'apertura del popup, sincronizza lo stato
+  useEffect(() => {
+    aggiornaStato();
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [aggiornaStato]);
 
   return (
     <div style={{ padding: 20, fontFamily: "sans-serif" }}>
       <h1>Pomodoro Timer</h1>
 
-
-      {left == null && <TimerOptions onAvvioSuccess={ () => window.location.reload()}></TimerOptions>}
-      {left !== null && <Controls onAvvioSuccess={ () => window.location.reload()} isRunning={isRunning} setIsRunning={setIsRunning}></Controls>}
-      {left !== null && <TimerDisplay left={left} fase={fase} />}
+      {left == null && (
+        <TimerOptions onAvvioSuccess={aggiornaStato} />
+      )}
+      {left !== null && (
+        <>
+          <Controls
+            onAvvioSuccess={aggiornaStato}
+            isRunning={isRunning}
+            setIsRunning={setIsRunning}
+          />
+          <TimerDisplay left={left} fase={fase} />
+        </>
+      )}
     </div>
   );
 };
